@@ -4,12 +4,15 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+ipykernel = "*"
 
 [packages]
 Flask = "==1.1.2"
 Jinja2 = "==2.11.3"
 MarkupSafe = "==1.1.1"
 Werkzeug = "==1.0.1"
+firebase-admin = "*"
+bcrypt = "*"
 
 [requires]
 python_version = "3.9"
