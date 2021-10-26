@@ -1,12 +1,18 @@
-import uuid
-import random
-import string
-
+import base64
 import bcrypt
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from flask import Flask
+from io import BytesIO
+import numpy as np
+import pickle
+import piexif
+from PIL import Image
+import random
+import uuid
+
+from caesar import Caesar
 
 
 # Use a service account
@@ -44,20 +50,35 @@ def encrypt(password, image, cipher):
     doc_ref = db.collection("hash-id").document(id)
     doc_ref.set({"hash": hash, "id": id})
 
-    # generate key for the id
-    key = ''.join(random.choices(string.ascii_lowercase, k=64))
+    # generate key for cipher
+    key = random.randint(0, 255)
 
     # store id, cipher and key in firestore
     doc_ref = db.collection("id-cipher-key").document(id)
     doc_ref.set({"id": id, "cipher": cipher, "key": key})
 
+    # convert image to numpy array
+    base64_decoded = base64.b64decode(image)
+    img = Image.open(BytesIO(base64_decoded))
+    img = np.array(img)
+
     # encrypt
+    cipher = Caesar(key=key)
+    cipher.encrypt(img)
 
-    # store id in encrypted image
+    # adding id to metadata
+    data = pickle.dumps(id)
+    exif_ifd = {piexif.ExifIFD.MakerNote: data}
+    exif_dict = {'Exif': exif_ifd}
+    exif_dat = piexif.dump(exif_dict)
 
-    # return encrypted base64 image
+    # convert encrypted image to base64
+    pil_img = Image.fromarray(img)
+    buff = BytesIO()
+    pil_img.save(buff, format='JPEG', exif=exif_dat)
+    encrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
 
-    return "hehe", 200
+    return encrypted_image, 200
 
 
 @app.route("/decrypt", methods=["POST"])
