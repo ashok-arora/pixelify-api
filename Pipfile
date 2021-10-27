@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 ipykernel = "*"
+autopep8 = "*"
 
 [packages]
 Flask = "==1.1.2"
@@ -13,6 +14,9 @@ MarkupSafe = "==1.1.1"
 Werkzeug = "==1.0.1"
 firebase-admin = "*"
 bcrypt = "*"
+pillow = "*"
+numpy = "*"
+piexif = "*"
 
 [requires]
 python_version = "3.9"
