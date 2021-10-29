@@ -1,9 +1,8 @@
 import base64
 import bcrypt
 import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-from flask import Flask
+from firebase_admin import credentials, firestore
+from flask import Flask, request
 from io import BytesIO
 import numpy as np
 import pickle
@@ -11,12 +10,26 @@ import piexif
 from PIL import Image
 import random
 import uuid
+import os
 
-from caesar import Caesar
+from api.caesar import Caesar
+
+from cryptography.fernet import Fernet
+
+# decrypt file using secret key
+key = os.environ.get("PIXELIFY_KEY")
+f = Fernet(key)
+
+with open("./api/serviceAccountKey.enc", "rb") as encrypted_file:
+    encrypted = encrypted_file.read()
+
+decrypted = f.decrypt(encrypted)
+with open("./api/serviceAccountKey.json", "wb") as decrypted_file:
+    decrypted_file.write(decrypted)
 
 
 # Use a service account
-cred = credentials.Certificate("./serviceAccountKey.json")
+cred = credentials.Certificate("./api/serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 app = Flask(__name__)
@@ -33,8 +46,11 @@ def ping():
 
 
 @app.route("/encrypt", methods=["POST"])
-def encrypt(password, image, cipher):
-
+def encrypt():
+    params = request.json
+    password = params['password'] 
+    image = params['image'] 
+    cipher = params['cipher']
     # firestore client
     db = firestore.client()
 
@@ -69,21 +85,24 @@ def encrypt(password, image, cipher):
     # adding id to metadata
     data = pickle.dumps(id)
     exif_ifd = {piexif.ExifIFD.MakerNote: data}
-    exif_dict = {'Exif': exif_ifd}
+    exif_dict = {"Exif": exif_ifd}
     exif_dat = piexif.dump(exif_dict)
 
     # convert encrypted image to base64
     pil_img = Image.fromarray(img)
     buff = BytesIO()
-    pil_img.save(buff, format='JPEG', exif=exif_dat)
-    encrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
+    pil_img.save(buff, format="JPEG", exif=exif_dat)
+    encrypted_image = base64.b64encode(buff.getvalue()).decode("utf-8")
 
     return encrypted_image, 200
 
 
 @app.route("/decrypt", methods=["POST"])
-def decrypt(password, image, cipher):
-
+def decrypt():
+    params = request.json
+    password = params['password'] 
+    image = params['image'] 
+    cipher = params['cipher']
     # hash password using bcrypt
 
     # check if hash exists
