@@ -48,8 +48,8 @@ def ping():
 @app.route("/encrypt", methods=["POST"])
 def encrypt():
     params = request.json
-    password = params['password'] 
-    image = params['image'] 
+    password = params['password']
+    image = params['image']
     cipher = params['cipher']
     # firestore client
     db = firestore.client()
@@ -74,6 +74,8 @@ def encrypt():
     doc_ref.set({"id": id, "cipher": cipher, "key": key})
 
     # convert image to numpy array
+    image_head = image[:image.index(',')+1]
+    image = image[image.index(',')+1:]
     base64_decoded = base64.b64decode(image)
     img = Image.open(BytesIO(base64_decoded))
     img = np.array(img)
@@ -93,6 +95,7 @@ def encrypt():
     buff = BytesIO()
     pil_img.save(buff, format="JPEG", exif=exif_dat)
     encrypted_image = base64.b64encode(buff.getvalue()).decode("utf-8")
+    encrypted_image = image_head+encrypted_image
 
     return encrypted_image, 200
 
@@ -100,8 +103,8 @@ def encrypt():
 @app.route("/decrypt", methods=["POST"])
 def decrypt():
     params = request.json
-    password = params['password'] 
-    image = params['image'] 
+    password = params['password']
+    image = params['image']
     cipher = params['cipher']
     # hash password using bcrypt
 
