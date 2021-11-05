@@ -15,7 +15,7 @@ Werkzeug = "==1.0.1"
 firebase-admin = "*"
 bcrypt = "*"
 pillow = "*"
-numpy = "*"
+numpy = "1.19.5"
 piexif = "*"
 cryptography = "*"
 
