@@ -17,19 +17,19 @@ import os
 from cryptography.fernet import Fernet
 
 # decrypt file using secret key
-key = os.environ.get("PIXELIFY_KEY")
-f = Fernet(key)
+# key = os.environ.get("PIXELIFY_KEY")
+# f = Fernet(key)
 
-with open("./serviceAccountKey.enc", "rb") as encrypted_file:
-    encrypted = encrypted_file.read()
+# with open("./serviceAccountKey.enc", "rb") as encrypted_file:
+#     encrypted = encrypted_file.read()
 
-decrypted = f.decrypt(encrypted)
-with open("./serviceAccountKey.json", "wb") as decrypted_file:
-    decrypted_file.write(decrypted)
+# decrypted = f.decrypt(encrypted)
+# with open("./serviceAccountKey.json", "wb") as decrypted_file:
+#     decrypted_file.write(decrypted)
 
 
 # Use a service account
-cred = credentials.Certificate("./serviceAccountKey.json")
+cred = credentials.Certificate("./not_serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 app = Flask(__name__)
