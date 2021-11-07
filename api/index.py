@@ -17,22 +17,22 @@ from api.caesar import Caesar
 from cryptography.fernet import Fernet
 
 # decrypt file using secret key
-key = os.environ.get("PIXELIFY_KEY")
-f = Fernet(key)
+# key = os.environ.get("PIXELIFY_KEY")
+# f = Fernet(key)
 
-with open("./api/serviceAccountKey.enc", "rb") as encrypted_file:
-    encrypted = encrypted_file.read()
+# with open("./api/serviceAccountKey.enc", "rb") as encrypted_file:
+#     encrypted = encrypted_file.read()
 
-decrypted = f.decrypt(encrypted)
-with open("./api/serviceAccountKey.json", "wb") as decrypted_file:
-    decrypted_file.write(decrypted)
+# decrypted = f.decrypt(encrypted)
+# with open("./api/serviceAccountKey.json", "wb") as decrypted_file:
+#     decrypted_file.write(decrypted)
 
 
-# Use a service account
-cred = credentials.Certificate("./api/serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+# # Use a service account
+# cred = credentials.Certificate("./api/serviceAccountKey.json")
+# firebase_admin.initialize_app(cred)
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
 
 @app.route("/", methods=["GET"])
