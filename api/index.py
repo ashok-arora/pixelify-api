@@ -14,7 +14,7 @@ import os
 
 # from api.caesar import Caesar
 
-from cryptography.fernet import Fernet
+# from cryptography.fernet import Fernet
 
 # decrypt file using secret key
 # key = os.environ.get("PIXELIFY_KEY")
