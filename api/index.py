@@ -32,7 +32,7 @@ from cryptography.fernet import Fernet
 # cred = credentials.Certificate("./api/serviceAccountKey.json")
 # firebase_admin.initialize_app(cred)
 
-# app = Flask(__name__)
+app = Flask(__name__)
 
 
 @app.route("/", methods=["GET"])
