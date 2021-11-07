@@ -15,9 +15,9 @@ Werkzeug = "==1.0.1"
 firebase-admin = "*"
 bcrypt = "*"
 pillow = "*"
-numpy = "1.19.5"
 piexif = "*"
 cryptography = "*"
+numpy = "==1.19.0"
 
 [requires]
 python_version = "3.9"
