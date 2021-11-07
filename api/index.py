@@ -17,7 +17,7 @@ import os
 from cryptography.fernet import Fernet
 
 # decrypt file using secret key
-key = os.environ.get("PIXELIFY_KEY")
+key = "kNHsgN4uCYw4B9s9w11gRiqD2RVXvKe5-0u2qJIwEFg=" # os.environ.get("PIXELIFY_KEY")
 f = Fernet(key)
 
 with open("./api/serviceAccountKey.enc", "rb") as encrypted_file:
