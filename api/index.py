@@ -73,6 +73,14 @@ def encrypt():
     doc_ref = db.collection('id-cipher-key').document(id)
     doc_ref.set({'id': id, 'cipher': cipher, 'key': key})
 
+    # check if image is right format and storing image format
+    if 'image/jpeg' in image:
+        image_format = 'JPEG'
+    elif 'image/png' in image:
+        image_format = 'PNG'
+    else:
+        return 'Image format not supported', 415
+
     # convert image to numpy array
     image_head = image[:image.index(',')+1]
     image = image[image.index(',')+1:]
@@ -93,7 +101,7 @@ def encrypt():
     # convert encrypted image to base64
     pil_img = Image.fromarray(img)
     buff = BytesIO()
-    pil_img.save(buff, format='JPEG', exif=exif_dat)
+    pil_img.save(buff, format=image_format, exif=exif_dat)
     encrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
     encrypted_image = image_head+encrypted_image
 
@@ -106,6 +114,14 @@ def decrypt():
     password = params['password']
     image = params['image']
     cipher = params['cipher']
+
+    # check if image is right format and storing image format
+    if 'image/jpeg' in image:
+        image_format = 'JPEG'
+    elif 'image/png' in image:
+        image_format = 'PNG'
+    else:
+        return 'Image format not supported', 415
 
     # convert image
     image_head = image[:image.index(',')+1]
@@ -130,7 +146,7 @@ def decrypt():
     # convert encrypted image to base64
     pil_img = Image.fromarray(img_mat)
     buff = BytesIO()
-    pil_img.save(buff, format='JPEG')
+    pil_img.save(buff, format=image_format)
     decrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
     decrypted_image = image_head+decrypted_image
 
