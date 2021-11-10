@@ -18,6 +18,7 @@ pillow = "*"
 piexif = "*"
 cryptography = "*"
 numpy = "==1.19.0"
+flask-cors = "*"
 
 [requires]
 python_version = "3.9"

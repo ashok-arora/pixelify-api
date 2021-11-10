@@ -11,6 +11,7 @@ from PIL import Image
 import random
 import uuid
 import os
+from flask_cors import CORS
 
 from api.caesar import Caesar
 
@@ -36,6 +37,7 @@ cred = credentials.Certificate(data)
 firebase_admin.initialize_app(cred)
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route("/", methods=["GET"])
