@@ -10,6 +10,7 @@ import piexif
 from PIL import Image
 import uuid
 import os
+from flask_cors import CORS
 
 from api.caesar import Caesar
 from api.one_time_pad import OneTimePad
@@ -20,19 +21,20 @@ from cryptography.fernet import Fernet
 key = os.environ.get('PIXELIFY_KEY')
 f = Fernet(key)
 
-with open('./api/serviceAccountKey.enc', 'rb') as encrypted_file:
+with open("./serviceAccountKey.enc", "rb") as encrypted_file:
     encrypted = encrypted_file.read()
 
 decrypted = f.decrypt(encrypted)
-with open('./api/serviceAccountKey.json', 'wb') as decrypted_file:
+with open("./serviceAccountKey.json", "wb") as decrypted_file:
     decrypted_file.write(decrypted)
 
 
 # Use a service account
-cred = credentials.Certificate('./api/serviceAccountKey.json')
+cred = credentials.Certificate("./serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 app = Flask(__name__)
+CORS(app)
 
 
 def get_cipher(cipher, size, key=None):
@@ -47,7 +49,7 @@ def index():
     return 'Pixelify backend API. Made using Flask and Python.', 200
 
 
-@app.route('/ping', methods=['GET'])
+@app.route("/ping", methods=["GET", "POST"])
 def ping():
     return 'pong!', 200
 
