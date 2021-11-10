@@ -12,6 +12,7 @@ import uuid
 import os
 
 from api.caesar import Caesar
+from api.one_time_pad import OneTimePad
 
 from cryptography.fernet import Fernet
 
@@ -37,6 +38,8 @@ app = Flask(__name__)
 def get_cipher(cipher, size, key=None):
     if cipher == 'caesar':
         return Caesar(size, key)
+    elif cipher == 'one_time_pad':
+        return OneTimePad(size, key)
 
 
 @app.route('/', methods=['GET'])
