@@ -45,7 +45,7 @@ def index():
     return "Pixelify backend API. Made using Flask and Python.", 200
 
 
-@app.route("/ping", methods=["GET"])
+@app.route("/ping", methods=["GET", "POST"])
 def ping():
     return "pong!", 200
 
