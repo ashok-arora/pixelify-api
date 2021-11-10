@@ -8,7 +8,6 @@ import numpy as np
 import pickle
 import piexif
 from PIL import Image
-import random
 import uuid
 import os
 
@@ -33,6 +32,11 @@ cred = credentials.Certificate('./api/serviceAccountKey.json')
 firebase_admin.initialize_app(cred)
 
 app = Flask(__name__)
+
+
+def get_cipher(cipher, size, key=None):
+    if cipher == 'caesar':
+        return Caesar(size, key)
 
 
 @app.route('/', methods=['GET'])
@@ -66,13 +70,6 @@ def encrypt():
     doc_ref = db.collection('hash-id').document(id)
     doc_ref.set({'hash': hash, 'id': id})
 
-    # generate key for cipher
-    key = random.randint(0, 255)
-
-    # store id, cipher and key in firestore
-    doc_ref = db.collection('id-cipher-key').document(id)
-    doc_ref.set({'id': id, 'cipher': cipher, 'key': key})
-
     # check if image is right format and storing image format
     if 'image/jpeg' in image:
         image_format = 'JPEG'
@@ -88,9 +85,11 @@ def encrypt():
     img = Image.open(BytesIO(base64_decoded))
     img = np.array(img)
 
+    # create cipher object
+    cipher_obj = get_cipher(cipher, img.size)
+
     # encrypt
-    cipher = Caesar(key=key)
-    cipher.encrypt(img)
+    cipher_obj.encrypt(img)
 
     # adding id to metadata
     data = pickle.dumps(id)
@@ -104,6 +103,16 @@ def encrypt():
     pil_img.save(buff, format=image_format, exif=exif_dat)
     encrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
     encrypted_image = image_head+encrypted_image
+
+    # store id, cipher and key in firestore
+    doc_ref = db.collection('id-cipher-key').document(id)
+    doc_ref.set(
+        {
+            'id': id,
+            'cipher': cipher,
+            'key': cipher_obj.key
+        }
+    )
 
     return encrypted_image, 200
 
@@ -139,9 +148,11 @@ def decrypt():
     # get key from firestore
     key = 1
 
+    # create cipher object
+    cipher_obj = get_cipher(cipher, img_mat.size, key)
+
     # decrypt image
-    cipher = Caesar(key=key)
-    cipher.decrypt(img_mat)
+    cipher_obj.decrypt(img_mat)
 
     # convert encrypted image to base64
     pil_img = Image.fromarray(img_mat)
