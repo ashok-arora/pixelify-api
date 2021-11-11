@@ -36,6 +36,12 @@ firebase_admin.initialize_app(cred)
 app = Flask(__name__)
 CORS(app)
 
+# firestore client
+db = firestore.client()
+
+# generate salt for bcrypt
+salt = bcrypt.gensalt(rounds=12)
+
 
 def get_cipher(cipher, size, key=None):
     if cipher == 'caesar':
@@ -60,11 +66,8 @@ def encrypt():
     password = params['password']
     image = params['image']
     cipher = params['cipher']
-    # firestore client
-    db = firestore.client()
 
     # hash password using bcrypt
-    salt = bcrypt.gensalt(rounds=12)
     password_bytes = str.encode(password)
     hash = bcrypt.hashpw(password_bytes, salt)
 
@@ -148,10 +151,22 @@ def decrypt():
     exif_dict = piexif.load(img.info['exif'])
     id = pickle.loads(exif_dict['Exif'][piexif.ExifIFD.MakerNote])
 
+
+
     # get password from firestore and verify
+    doc_ref = db.collection('hash-id').where('id', '==', id).get()
+    firestore_dict = doc_ref[0].to_dict()
+
+    password_bytes = str.encode(password)
+    if not bcrypt.checkpw(password_bytes, firestore_dict['hash']):
+        return "wrong password", 403
+
 
     # get key from firestore
-    key = 1
+    doc_ref = db.collection('id-cipher-key').where('id', '==', id).get()
+    firestore_dict = doc_ref[0].to_dict()
+
+    key = firestore_dict['key']
 
     # create cipher object
     cipher_obj = get_cipher(cipher, img_mat.size, key)
