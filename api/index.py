@@ -62,10 +62,15 @@ def ping():
 
 @app.route("/available-ciphers", methods=["GET"])
 def cipher_list():
-    return jsonify([
-        {"display-name": "Caesar's Cipher", "api-name": "caesar"},
-        {"display-name": "One Time Pad", "api-name": "one_time_pad"},
-    ]), 200
+    return (
+        jsonify(
+            [
+                {"display-name": "Caesar's Cipher", "api-name": "caesar"},
+                {"display-name": "One Time Pad", "api-name": "one_time_pad"},
+            ]
+        ),
+        200,
+    )
 
 
 @app.route("/encrypt", methods=["POST"])
@@ -132,7 +137,6 @@ def decrypt():
     params = request.json
     password = params["password"]
     image = params["image"]
-    cipher = params["cipher"]
 
     # check if image is right format and storing image format
     if "image/jpeg" in image:
@@ -168,7 +172,7 @@ def decrypt():
     key = firestore_dict["key"]
 
     # create cipher object
-    cipher_obj = get_cipher(cipher, img_mat.size, key)
+    cipher_obj = get_cipher(firestore_dict["cipher"], img_mat.size, key)
 
     # decrypt image
     cipher_obj.decrypt(img_mat)
