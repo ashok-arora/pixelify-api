@@ -1,3 +1,4 @@
+import numpy as np
 import random
 
 
@@ -9,21 +10,15 @@ class OneTimePad:
     def encrypt(self, matrix):
         assert self.key is not None, 'Key is not set'
 
-        counter = 0
-        key = list(map(int, self.key.split(';')))
-        for i in range(len(matrix)):
-            for j in range(len(matrix[i])):
-                for k in range(len(matrix[i][j])):
-                    matrix[i][j][k] = (matrix[i][j][k] + key[counter]) % 256
-                    counter += 1
+        key = np.array(self.key.split(';')).astype(matrix.dtype)
+        key = key.reshape(matrix.shape)
+        matrix += key
+        matrix %= 256
 
     def decrypt(self, matrix):
         assert self.key is not None, 'Key is not set'
 
-        counter = 0
-        key = list(map(int, self.key.split(';')))
-        for i in range(len(matrix)):
-            for j in range(len(matrix[i])):
-                for k in range(len(matrix[i][j])):
-                    matrix[i][j][k] = (matrix[i][j][k] - key[counter]) % 256
-                    counter += 1
+        key = np.array(self.key.split(';')).astype(matrix.dtype)
+        key = key.reshape(matrix.shape)
+        matrix -= key
+        matrix %= 256

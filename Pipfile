@@ -17,9 +17,10 @@ bcrypt = "*"
 pillow = "*"
 piexif = "*"
 cryptography = "*"
-numpy = "==1.19.0"
+numpy = "*"
 flask-cors = "*"
 gunicorn = "*"
+opencv-python = "*"
 
 [requires]
 python_version = "3.9"

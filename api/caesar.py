@@ -8,15 +8,11 @@ class Caesar:
     def encrypt(self, matrix):
         assert self.key is not None, 'Key is not set'
 
-        for i in range(len(matrix)):
-            for j in range(len(matrix[i])):
-                for k in range(len(matrix[i][j])):
-                    matrix[i][j][k] = (matrix[i][j][k] + self.key) % 256
+        matrix += self.key
+        matrix %= 256
 
     def decrypt(self, matrix):
         assert self.key is not None, 'Key is not set'
 
-        for i in range(len(matrix)):
-            for j in range(len(matrix[i])):
-                for k in range(len(matrix[i][j])):
-                    matrix[i][j][k] = (matrix[i][j][k] - self.key) % 256
+        matrix -= self.key
+        matrix %= 256
