@@ -108,6 +108,8 @@ def encrypt():
 
     # create cipher object
     cipher_obj = get_cipher(cipher, img.size)
+    if cipher_obj is None:
+        return 'Cipher not supported', 400
 
     # encrypt
     cipher_obj.encrypt(img)
