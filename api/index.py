@@ -14,6 +14,7 @@ from PIL import Image
 import uuid
 
 from api.caesar import Caesar
+from api.modified_caesar import ModifiedCaesar
 from api.one_time_pad import OneTimePad
 
 
@@ -43,11 +44,13 @@ db = firestore.client()
 salt = bcrypt.gensalt(rounds=12)
 
 
-def get_cipher(cipher, size, key=None):
+def get_cipher(cipher, shape, key=None):
     if cipher == 'caesar':
-        return Caesar(size, key)
+        return Caesar(shape, key)
+    elif cipher == 'modified_caesar':
+        return ModifiedCaesar(shape, key)
     elif cipher == 'one_time_pad':
-        return OneTimePad(size, key)
+        return OneTimePad(shape, key)
 
 
 @app.route('/', methods=['GET'])
@@ -66,7 +69,9 @@ def cipher_list():
         jsonify(
             [
                 {'display-name': 'Caesar\'s Cipher', 'api-name': 'caesar'},
-                {'display-name': 'One Time Pad', 'api-name': 'one_time_pad'},
+                {'display-name': 'Modified Caesar\'s Cipher',
+                    'api-name': 'modified_caesar'},
+                {'display-name': 'One Time Pad', 'api-name': 'one_time_pad'}
             ]
         ),
         200,
@@ -107,7 +112,7 @@ def encrypt():
     img = np.array(img)
 
     # create cipher object
-    cipher_obj = get_cipher(cipher, img.size)
+    cipher_obj = get_cipher(cipher, img.shape)
     if cipher_obj is None:
         return 'Cipher not supported', 400
 
@@ -174,7 +179,7 @@ def decrypt():
     key = firestore_dict['key']
 
     # create cipher object
-    cipher_obj = get_cipher(firestore_dict['cipher'], img_mat.size, key)
+    cipher_obj = get_cipher(firestore_dict['cipher'], img_mat.shape, key)
 
     # decrypt image
     cipher_obj.decrypt(img_mat)

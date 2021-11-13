@@ -2,7 +2,7 @@ import random
 
 
 class Caesar:
-    def __init__(self, size, key=None):
+    def __init__(self, shape, key=None):
         self.key = random.randint(0, 255) if key is None else key
 
     def encrypt(self, matrix):
