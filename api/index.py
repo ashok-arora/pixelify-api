@@ -16,6 +16,7 @@ import uuid
 from api.caesar import Caesar
 from api.modified_caesar import ModifiedCaesar
 from api.one_time_pad import OneTimePad
+from api.transposition import Transposition
 
 
 # decrypt file using secret key
@@ -51,6 +52,8 @@ def get_cipher(cipher, shape, key=None):
         return ModifiedCaesar(shape, key)
     elif cipher == 'one_time_pad':
         return OneTimePad(shape, key)
+    elif cipher == 'transposition':
+        return Transposition(shape, key)
 
 
 @app.route('/', methods=['GET'])
@@ -71,7 +74,8 @@ def cipher_list():
                 {'display-name': 'Caesar\'s Cipher', 'api-name': 'caesar'},
                 {'display-name': 'Modified Caesar\'s Cipher',
                     'api-name': 'modified_caesar'},
-                {'display-name': 'One Time Pad', 'api-name': 'one_time_pad'}
+                {'display-name': 'One Time Pad', 'api-name': 'one_time_pad'},
+                {'display-name': 'Transposition', 'api-name': 'transposition'}
             ]
         ),
         200,
@@ -114,7 +118,7 @@ def encrypt():
     # create cipher object
     cipher_obj = get_cipher(cipher, img.shape)
     if cipher_obj is None:
-        return 'Cipher not supported', 400
+        return 'Cipher not available', 400
 
     # encrypt
     cipher_obj.encrypt(img)
