@@ -12,6 +12,7 @@ import pickle
 import piexif
 from PIL import Image
 import uuid
+import zlib
 
 from api.caesar import Caesar
 from api.modified_caesar import ModifiedCaesar
@@ -96,10 +97,6 @@ def encrypt():
     # generate id, firestore doesn't support auto-increment id
     id = str(uuid.uuid4())
 
-    # store hash and id in firestore
-    doc_ref = db.collection('hash-id').document(id)
-    doc_ref.set({'hash': hash, 'id': id})
-
     # check if image is right format and storing image format
     if 'image/jpeg' in image:
         image_format = 'JPEG'
@@ -138,7 +135,12 @@ def encrypt():
 
     # store id, cipher and key in firestore
     doc_ref = db.collection('id-cipher-key').document(id)
-    doc_ref.set({'id': id, 'cipher': cipher, 'key': cipher_obj.key})
+    compressed_key = zlib.compress(cipher_obj.key.encode())
+    doc_ref.set({'id': id, 'cipher': cipher, 'key': compressed_key})
+
+    # store hash and id in firestore
+    doc_ref = db.collection('hash-id').document(id)
+    doc_ref.set({'hash': hash, 'id': id})
 
     return encrypted_image, 200
 
@@ -180,7 +182,8 @@ def decrypt():
     doc_ref = db.collection('id-cipher-key').where('id', '==', id).get()
     firestore_dict = doc_ref[0].to_dict()
 
-    key = firestore_dict['key']
+    compressed_key = firestore_dict['key']
+    key = zlib.decompress(compressed_key).decode()
 
     # create cipher object
     cipher_obj = get_cipher(firestore_dict['cipher'], img_mat.shape, key)
