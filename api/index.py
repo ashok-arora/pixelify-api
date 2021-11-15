@@ -97,20 +97,20 @@ def encrypt():
     # generate id, firestore doesn't support auto-increment id
     id = str(uuid.uuid4())
 
-    # check if image is right format and storing image format
+    # check if image is right format and convert image to png
     if 'image/jpeg' in image:
-        image_format = 'JPEG'
+        image = image[image.index(',') + 1:]
+        base64_decoded = base64.b64decode(image)
+        img = Image.open(BytesIO(base64_decoded)).convert('RGB')
     elif 'image/png' in image:
-        image_format = 'PNG'
+        image = image[image.index(',') + 1:]
+        base64_decoded = base64.b64decode(image)
+        img = Image.open(BytesIO(base64_decoded))
     else:
         return 'Image format not supported', 415
 
     # convert image to numpy array
-    image_head = image[: image.index(',') + 1]
-    image = image[image.index(',') + 1:]
-    base64_decoded = base64.b64decode(image)
-    img = Image.open(BytesIO(base64_decoded))
-    img = np.array(img)
+    img = np.asarray(img)
 
     # create cipher object
     cipher_obj = get_cipher(cipher, img.shape)
@@ -127,6 +127,8 @@ def encrypt():
     exif_dat = piexif.dump(exif_dict)
 
     # convert encrypted image to base64
+    image_format = 'PNG'
+    image_head = 'data:image/png;base64,'
     pil_img = Image.fromarray(img)
     buff = BytesIO()
     pil_img.save(buff, format=image_format, exif=exif_dat)
@@ -151,20 +153,20 @@ def decrypt():
     password = params['password']
     image = params['image']
 
-    # check if image is right format and storing image format
+    # check if image is right format and convert image to png
     if 'image/jpeg' in image:
-        image_format = 'JPEG'
+        image = image[image.index(',') + 1:]
+        base64_decoded = base64.b64decode(image)
+        img = Image.open(BytesIO(base64_decoded)).convert('RGB')
     elif 'image/png' in image:
-        image_format = 'PNG'
+        image = image[image.index(',') + 1:]
+        base64_decoded = base64.b64decode(image)
+        img = Image.open(BytesIO(base64_decoded))
     else:
         return 'Image format not supported', 415
 
     # convert image
-    image_head = image[: image.index(',') + 1]
-    image = image[image.index(',') + 1:]
-    base64_decoded = base64.b64decode(image)
-    img = Image.open(BytesIO(base64_decoded))
-    img_mat = np.array(img)
+    img_mat = np.asarray(img)
 
     # extract id
     exif_dict = piexif.load(img.info['exif'])
@@ -192,6 +194,8 @@ def decrypt():
     cipher_obj.decrypt(img_mat)
 
     # convert encrypted image to base64
+    image_format = 'PNG'
+    image_head = 'data:image/png;base64,'
     pil_img = Image.fromarray(img_mat)
     buff = BytesIO()
     pil_img.save(buff, format=image_format)
