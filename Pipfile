@@ -21,6 +21,7 @@ numpy = "*"
 flask-cors = "*"
 gunicorn = "*"
 opencv-python = "*"
+black = "*"
 
 [requires]
 python_version = "3.9"

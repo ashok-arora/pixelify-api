@@ -2,7 +2,7 @@ import base64
 import bcrypt
 from cryptography.fernet import Fernet
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, storage
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from io import BytesIO
@@ -12,7 +12,7 @@ import pickle
 import piexif
 from PIL import Image
 import uuid
-import zlib
+import json
 
 from api.caesar import Caesar
 from api.modified_caesar import ModifiedCaesar
@@ -34,8 +34,14 @@ with open('./serviceAccountKey.json', 'wb') as decrypted_file:
 
 # Use a service account
 cred = credentials.Certificate('./serviceAccountKey.json')
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'blacksheep-9a512.appspot.com'
+})
 
+# Get bucket object to upload/download files
+bucket = storage.bucket()
+
+# Enable CORS to allow requests from Frontend  
 app = Flask(__name__)
 CORS(app)
 
@@ -135,10 +141,21 @@ def encrypt():
     encrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
     encrypted_image = image_head + encrypted_image
 
-    # store id, cipher and key in firestore
-    doc_ref = db.collection('id-cipher-key').document(id)
-    compressed_key = zlib.compress(cipher_obj.key.encode())
-    doc_ref.set({'id': id, 'cipher': cipher, 'key': compressed_key})
+    # create a temp file to store cipher & key, with id.json as filename
+    data = {}
+    data['cipher'] = cipher
+    data['key'] = cipher_obj.key
+
+    file_name = f'{id}.json'
+    with open(file_name, 'w') as outfile:
+        json.dump(data, outfile)
+
+    # upload file to firebase storage
+    blob = bucket.blob(file_name)
+    blob.upload_from_filename(file_name)
+
+    # delete temp file
+    os.remove(file_name)
 
     # store hash and id in firestore
     doc_ref = db.collection('hash-id').document(id)
@@ -180,15 +197,22 @@ def decrypt():
     if not bcrypt.checkpw(password_bytes, firestore_dict['hash']):
         return 'wrong password', 403
 
-    # get key from firestore
-    doc_ref = db.collection('id-cipher-key').where('id', '==', id).get()
-    firestore_dict = doc_ref[0].to_dict()
+    # add .json to id and fetch file from firestore storage bucket
+    file_name = f'{id}.json'
+    blob = bucket.blob(file_name)
+    blob.download_to_filename(file_name)
 
-    compressed_key = firestore_dict['key']
-    key = zlib.decompress(compressed_key).decode()
+    # get cipher and key from file
+    with open(file_name) as json_file:
+        data = json.load(json_file)
+        key = data['key']
+        cipher = data['cipher']
+    
+    # delete file    
+    os.remove(file_name)
 
     # create cipher object
-    cipher_obj = get_cipher(firestore_dict['cipher'], img_mat.shape, key)
+    cipher_obj = get_cipher(cipher, img_mat.shape, key)
 
     # decrypt image
     cipher_obj.decrypt(img_mat)
