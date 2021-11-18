@@ -6,13 +6,13 @@ from firebase_admin import credentials, firestore, storage
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from io import BytesIO
+import json
 import numpy as np
 import os
 import pickle
 import piexif
 from PIL import Image
 import uuid
-import json
 
 from api.caesar import Caesar
 from api.modified_caesar import ModifiedCaesar
@@ -41,7 +41,7 @@ firebase_admin.initialize_app(cred, {
 # Get bucket object to upload/download files
 bucket = storage.bucket()
 
-# Enable CORS to allow requests from Frontend  
+# Enable CORS to allow requests from Frontend
 app = Flask(__name__)
 CORS(app)
 
@@ -116,7 +116,7 @@ def encrypt():
     except:
         return 'Image format not supported', 415
 
-    img_mat = np.asarray(img)
+    img = np.asarray(img)
 
     # create cipher object
     cipher_obj = get_cipher(cipher, img.shape)
@@ -213,8 +213,8 @@ def decrypt():
         data = json.load(json_file)
         key = data['key']
         cipher = data['cipher']
-    
-    # delete file    
+
+    # delete file
     os.remove(file_name)
 
     # create cipher object
