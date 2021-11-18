@@ -103,20 +103,20 @@ def encrypt():
     # generate id, firestore doesn't support auto-increment id
     id = str(uuid.uuid4())
 
-    # check if image is right format and convert image to png
-    if 'image/jpeg' in image:
-        image = image[image.index(',') + 1:]
-        base64_decoded = base64.b64decode(image)
-        img = Image.open(BytesIO(base64_decoded)).convert('RGB')
-    elif 'image/png' in image:
-        image = image[image.index(',') + 1:]
-        base64_decoded = base64.b64decode(image)
-        img = Image.open(BytesIO(base64_decoded))
-    else:
+    # convert image to numpy array
+    try:
+        if 'image/png' in image:
+            image = image[image.index(',') + 1:]
+            base64_decoded = base64.b64decode(image)
+            img = Image.open(BytesIO(base64_decoded))
+        else:
+            image = image[image.index(',') + 1:]
+            base64_decoded = base64.b64decode(image)
+            img = Image.open(BytesIO(base64_decoded)).convert('RGB')
+    except:
         return 'Image format not supported', 415
 
-    # convert image to numpy array
-    img = np.asarray(img)
+    img_mat = np.asarray(img)
 
     # create cipher object
     cipher_obj = get_cipher(cipher, img.shape)
@@ -137,8 +137,11 @@ def encrypt():
     image_head = 'data:image/png;base64,'
     pil_img = Image.fromarray(img)
     buff = BytesIO()
-    pil_img.save(buff, format=image_format, exif=exif_dat)
-    encrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
+    try:
+        pil_img.save(buff, format=image_format, exif=exif_dat)
+        encrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
+    except:
+        return 'Image format not supported', 415
     encrypted_image = image_head + encrypted_image
 
     # create a temp file to store cipher & key, with id.json as filename
@@ -170,24 +173,27 @@ def decrypt():
     password = params['password']
     image = params['image']
 
-    # check if image is right format and convert image to png
-    if 'image/jpeg' in image:
-        image = image[image.index(',') + 1:]
-        base64_decoded = base64.b64decode(image)
-        img = Image.open(BytesIO(base64_decoded)).convert('RGB')
-    elif 'image/png' in image:
-        image = image[image.index(',') + 1:]
-        base64_decoded = base64.b64decode(image)
-        img = Image.open(BytesIO(base64_decoded))
-    else:
+    # convert image to numpy array
+    try:
+        if 'image/png' in image:
+            image = image[image.index(',') + 1:]
+            base64_decoded = base64.b64decode(image)
+            img = Image.open(BytesIO(base64_decoded))
+        else:
+            image = image[image.index(',') + 1:]
+            base64_decoded = base64.b64decode(image)
+            img = Image.open(BytesIO(base64_decoded)).convert('RGB')
+    except:
         return 'Image format not supported', 415
 
-    # convert image
     img_mat = np.asarray(img)
 
     # extract id
-    exif_dict = piexif.load(img.info['exif'])
-    id = pickle.loads(exif_dict['Exif'][piexif.ExifIFD.MakerNote])
+    try:
+        exif_dict = piexif.load(img.info['exif'])
+        id = pickle.loads(exif_dict['Exif'][piexif.ExifIFD.MakerNote])
+    except:
+        return 'Image is not encrypted', 415
 
     # get password from firestore and verify
     doc_ref = db.collection('hash-id').where('id', '==', id).get()
@@ -222,8 +228,11 @@ def decrypt():
     image_head = 'data:image/png;base64,'
     pil_img = Image.fromarray(img_mat)
     buff = BytesIO()
-    pil_img.save(buff, format=image_format)
-    decrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
+    try:
+        pil_img.save(buff, format=image_format)
+        decrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
+    except:
+        return 'Image format not supported', 415
     decrypted_image = image_head + decrypted_image
 
     return decrypted_image, 200
