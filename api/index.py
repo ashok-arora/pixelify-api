@@ -22,20 +22,22 @@ from api.transposition import Transposition
 
 
 # decrypt file using secret key
-key = os.environ.get("PIXELIFY_KEY")
+key = os.environ.get('PIXELIFY_KEY')
 f = Fernet(key)
 
-with open("./serviceAccountKey.enc", "rb") as encrypted_file:
+with open('./serviceAccountKey.enc', 'rb') as encrypted_file:
     encrypted = encrypted_file.read()
 
 decrypted = f.decrypt(encrypted)
-with open("./serviceAccountKey.json", "wb") as decrypted_file:
+with open('./serviceAccountKey.json', 'wb') as decrypted_file:
     decrypted_file.write(decrypted)
 
 
 # Use a service account
-cred = credentials.Certificate("./serviceAccountKey.json")
-firebase_admin.initialize_app(cred, {"storageBucket": "blacksheep-9a512.appspot.com"})
+cred = credentials.Certificate('./serviceAccountKey.json')
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'blacksheep-9a512.appspot.com'
+})
 
 # Get bucket object to upload/download files
 bucket = storage.bucket()
@@ -52,50 +54,48 @@ salt = bcrypt.gensalt(rounds=12)
 
 
 def get_cipher(cipher, shape, key=None):
-    if cipher == "caesar":
+    if cipher == 'caesar':
         return Caesar(shape, key)
-    elif cipher == "modified_caesar":
+    elif cipher == 'modified_caesar':
         return ModifiedCaesar(shape, key)
-    elif cipher == "one_time_pad":
+    elif cipher == 'one_time_pad':
         return OneTimePad(shape, key)
-    elif cipher == "transposition":
+    elif cipher == 'transposition':
         return Transposition(shape, key)
 
 
-@app.route("/", methods=["GET"])
+@app.route('/', methods=['GET'])
 def index():
-    return "Pixelify backend API. Made using Flask and Python.", 200
+    return 'Pixelify backend API. Made using Flask and Python.', 200
 
 
-@app.route("/ping", methods=["GET", "POST"])
+@app.route('/ping', methods=['GET', 'POST'])
 def ping():
-    return "pong!", 200
+    return 'pong!', 200
 
 
-@app.route("/available-ciphers", methods=["GET"])
+@app.route('/available-ciphers', methods=['GET'])
 def cipher_list():
     return (
         jsonify(
             [
-                {"display-name": "Caesar's Cipher", "api-name": "caesar"},
-                {
-                    "display-name": "Modified Caesar's Cipher",
-                    "api-name": "modified_caesar",
-                },
-                {"display-name": "One Time Pad", "api-name": "one_time_pad"},
-                {"display-name": "Transposition", "api-name": "transposition"},
+                {'display-name': 'Caesar\'s Cipher', 'api-name': 'caesar'},
+                {'display-name': 'Modified Caesar\'s Cipher',
+                    'api-name': 'modified_caesar'},
+                {'display-name': 'One Time Pad', 'api-name': 'one_time_pad'},
+                {'display-name': 'Transposition', 'api-name': 'transposition'}
             ]
         ),
         200,
     )
 
 
-@app.route("/encrypt", methods=["POST"])
+@app.route('/encrypt', methods=['POST'])
 def encrypt():
     params = request.json
-    password = params["password"]
-    image = params["image"]
-    cipher = params["cipher"]
+    password = params['password']
+    image = params['image']
+    cipher = params['cipher']
 
     # hash password using bcrypt
     password_bytes = str.encode(password)
@@ -106,23 +106,23 @@ def encrypt():
 
     # convert image to numpy array
     try:
-        if "image/png" in image:
-            image = image[image.index(",") + 1 :]
+        if 'image/png' in image:
+            image = image[image.index(',') + 1:]
             base64_decoded = base64.b64decode(image)
             img = Image.open(BytesIO(base64_decoded))
         else:
-            image = image[image.index(",") + 1 :]
+            image = image[image.index(',') + 1:]
             base64_decoded = base64.b64decode(image)
-            img = Image.open(BytesIO(base64_decoded)).convert("RGB")
+            img = Image.open(BytesIO(base64_decoded)).convert('RGB')
     except:
-        return "Image format not supported", 415
+        return 'Image format not supported', 415
 
     img = np.asarray(img)
 
     # create cipher object
     cipher_obj = get_cipher(cipher, img.shape)
     if cipher_obj is None:
-        return "Cipher not available", 400
+        return 'Cipher not available', 400
 
     # encrypt
     cipher_obj.encrypt(img)
@@ -130,37 +130,29 @@ def encrypt():
     # adding id to metadata
     data = pickle.dumps(id)
     exif_ifd = {piexif.ExifIFD.MakerNote: data}
-    exif_dict = {"Exif": exif_ifd}
+    exif_dict = {'Exif': exif_ifd}
     exif_dat = piexif.dump(exif_dict)
 
     # convert encrypted image to base64
-    image_format = "PNG"
-    image_head = "data:image/png;base64,"
+    image_format = 'PNG'
+    image_head = 'data:image/png;base64,'
     pil_img = Image.fromarray(img)
     buff = BytesIO()
     try:
         pil_img.save(buff, format=image_format, exif=exif_dat)
-        encrypted_image = base64.b64encode(buff.getvalue()).decode("utf-8")
+        encrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
     except:
-        return "Image format not supported", 415
+        return 'Image format not supported', 415
     encrypted_image = image_head + encrypted_image
-
-    # compress key to save space
-    key = cipher_obj.key.encode("utf-8")
-    compressed_key = zlib.compress(key)
-
-    # zlib returns byte-string, json dump allows only string.
-    # zlib byte-string cannot be converted to string since decoding format is unknown.
-    # To solve this, it was converted to base64 byte-string and UTF-8 decoded.
-    compressed_key_b64 = base64.b64encode(compressed_key).decode()
 
     # create a temp file to store cipher & key, with id.json as filename
     data = {}
-    data["cipher"] = cipher
-    data["key"] = compressed_key_b64
+    data['cipher'] = cipher
+    compressed_key = zlib.compress(cipher_obj.key.encode('utf-8')).decode('raw_unicode_escape')
+    data['key'] = compressed_key
 
-    file_name = f"{id}.json"
-    with open(file_name, "w") as outfile:
+    file_name = f'{id}.json'
+    with open(file_name, 'w') as outfile:
         json.dump(data, outfile)
 
     # upload file to firebase storage
@@ -171,62 +163,59 @@ def encrypt():
     os.remove(file_name)
 
     # store hash and id in firestore
-    doc_ref = db.collection("hash-id").document(id)
-    doc_ref.set({"hash": hash, "id": id})
+    doc_ref = db.collection('hash-id').document(id)
+    doc_ref.set({'hash': hash, 'id': id})
 
     return encrypted_image, 200
 
 
-@app.route("/decrypt", methods=["POST"])
+@app.route('/decrypt', methods=['POST'])
 def decrypt():
     params = request.json
-    password = params["password"]
-    image = params["image"]
+    password = params['password']
+    image = params['image']
 
     # convert image to numpy array
     try:
-        if "image/png" in image:
-            image = image[image.index(",") + 1 :]
+        if 'image/png' in image:
+            image = image[image.index(',') + 1:]
             base64_decoded = base64.b64decode(image)
             img = Image.open(BytesIO(base64_decoded))
         else:
-            image = image[image.index(",") + 1 :]
+            image = image[image.index(',') + 1:]
             base64_decoded = base64.b64decode(image)
-            img = Image.open(BytesIO(base64_decoded)).convert("RGB")
+            img = Image.open(BytesIO(base64_decoded)).convert('RGB')
     except:
-        return "Image format not supported", 415
+        return 'Image format not supported', 415
 
     img_mat = np.asarray(img)
 
     # extract id
     try:
-        exif_dict = piexif.load(img.info["exif"])
-        id = pickle.loads(exif_dict["Exif"][piexif.ExifIFD.MakerNote])
+        exif_dict = piexif.load(img.info['exif'])
+        id = pickle.loads(exif_dict['Exif'][piexif.ExifIFD.MakerNote])
     except:
-        return "Image is not encrypted", 415
+        return 'Image is not encrypted', 415
 
     # get password from firestore and verify
-    doc_ref = db.collection("hash-id").where("id", "==", id).get()
+    doc_ref = db.collection('hash-id').where('id', '==', id).get()
     firestore_dict = doc_ref[0].to_dict()
 
     password_bytes = str.encode(password)
-    if not bcrypt.checkpw(password_bytes, firestore_dict["hash"]):
-        return "wrong password", 403
+    if not bcrypt.checkpw(password_bytes, firestore_dict['hash']):
+        return 'wrong password', 403
 
     # add .json to id and fetch file from firestore storage bucket
-    file_name = f"{id}.json"
+    file_name = f'{id}.json'
     blob = bucket.blob(file_name)
     blob.download_to_filename(file_name)
 
     # get cipher and key from file
     with open(file_name) as json_file:
         data = json.load(json_file)
-
-        compressed_key_b64 = data["key"].encode()
-        compressed_key = base64.b64decode(compressed_key_b64)
-        key = zlib.decompress(compressed_key).decode("utf-8")
-
-        cipher = data["cipher"]
+        compressed_key = data['key'].encode('raw_unicode_escape')
+        key = zlib.decompress(compressed_key).decode('utf-8')
+        cipher = data['cipher']
 
     # delete file
     os.remove(file_name)
@@ -238,19 +227,19 @@ def decrypt():
     cipher_obj.decrypt(img_mat)
 
     # convert encrypted image to base64
-    image_format = "PNG"
-    image_head = "data:image/png;base64,"
+    image_format = 'PNG'
+    image_head = 'data:image/png;base64,'
     pil_img = Image.fromarray(img_mat)
     buff = BytesIO()
     try:
         pil_img.save(buff, format=image_format)
-        decrypted_image = base64.b64encode(buff.getvalue()).decode("utf-8")
+        decrypted_image = base64.b64encode(buff.getvalue()).decode('utf-8')
     except:
-        return "Image format not supported", 415
+        return 'Image format not supported', 415
     decrypted_image = image_head + decrypted_image
 
     return decrypted_image, 200
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True, port=80)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True, port=80)

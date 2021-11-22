@@ -7,14 +7,14 @@ class Caesar:
         self.key = str(self.key)
 
     def encrypt(self, matrix):
-        assert self.key is not None, "Key is not set"
+        assert self.key is not None, 'Key is not set'
 
         key = int(self.key)
         matrix += key
         matrix %= 256
 
     def decrypt(self, matrix):
-        assert self.key is not None, "Key is not set"
+        assert self.key is not None, 'Key is not set'
 
         key = int(self.key)
         matrix -= key
