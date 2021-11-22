@@ -148,7 +148,7 @@ def encrypt():
     # create a temp file to store cipher & key, with id.json as filename
     data = {}
     data['cipher'] = cipher
-    compressed_key = zlib.compress(cipher_obj.key.encode()).decode('cp1252')
+    compressed_key = zlib.compress(cipher_obj.key.encode('utf-8')).decode('raw_unicode_escape')
     data['key'] = compressed_key
 
     file_name = f'{id}.json'
@@ -213,8 +213,8 @@ def decrypt():
     # get cipher and key from file
     with open(file_name) as json_file:
         data = json.load(json_file)
-        compressed_key = data['key'].encode('cp1252')
-        key = zlib.decompress(compressed_key).decode()
+        compressed_key = data['key'].encode('raw_unicode_escape')
+        key = zlib.decompress(compressed_key).decode('utf-8')
         cipher = data['cipher']
 
     # delete file
