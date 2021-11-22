@@ -13,7 +13,6 @@ import pickle
 import piexif
 from PIL import Image
 import uuid
-import zlib
 
 from api.caesar import Caesar
 from api.modified_caesar import ModifiedCaesar
@@ -148,8 +147,7 @@ def encrypt():
     # create a temp file to store cipher & key, with id.json as filename
     data = {}
     data['cipher'] = cipher
-    compressed_key = zlib.compress(cipher_obj.key.encode())
-    data['key'] = compressed_key
+    data['key'] = cipher_obj.key
 
     file_name = f'{id}.json'
     with open(file_name, 'w') as outfile:
@@ -213,8 +211,7 @@ def decrypt():
     # get cipher and key from file
     with open(file_name) as json_file:
         data = json.load(json_file)
-        compressed_key = data['key']
-        key = zlib.decompress(compressed_key).decode()
+        key = data['key']
         cipher = data['cipher']
 
     # delete file
