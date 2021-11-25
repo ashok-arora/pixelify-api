@@ -8,6 +8,7 @@ class Transposition:
         if self.key is None:
             temp = list(map(str, range(0, shape[1])))
             random.shuffle(temp)
+            self.key = temp
 
     def encrypt(self, matrix):
         assert self.key is not None, 'Key is not set'
